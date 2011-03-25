@@ -152,6 +152,22 @@ sub get_group_ids {
     if ($groups) {
         for my $group (split(/,/, $groups)) {
             my %groups_by_name = map { $_->name => $_ } values %{$fd_data->{'groups_by_id'}};
+            unless ( defined $groups_by_name{$group} ) {
+                my $blog_id = $ctx->stash('blog_id');
+                my $tmpl    = $ctx->{__stash}{template};
+                my $msg     = 'Publish error in template "%s": '
+                            . 'Error publishing %s tag: Unknown group %s';
+                $msg
+                    = sprintf( $msg, $tmpl->name, $ctx->this_tag, $group );
+                warn $msg;
+                MT->log({
+                    ($blog_id ? ( blog_id => $blog_id ) : () ),
+                    message => $msg,
+                    category => "publish",
+                    level => MT::Log::ERROR(),
+                });
+                next;
+            }
             push(@group_ids, $groups_by_name{$group}->id);
         }
     }
