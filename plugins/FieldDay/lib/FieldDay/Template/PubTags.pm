@@ -37,7 +37,7 @@ sub get_fd_data {
     my $fd_data = {
         'fields_by_name' => $fields_by_name,
         'grouped_fields' => $grouped_fields,
-        'group_need_ns' => $group_need_ns,
+        'group_need_ns' => ( $group_need_ns || 0 ),
         'values' => $values,
         'group_orders' => $group_orders,
         'groups_by_id' => $groups_by_id,
@@ -60,7 +60,8 @@ sub hdlr_FieldGroup {
         $group_id = $groups_by_name{$group}->id;
         local $ctx->{'__stash'}{"$stash_key:group_id"} = $group_id;
     }
-    my @indices = (0 .. $fd_data->{'group_need_ns'}->{$group_id} - 1);
+    my $group_need_ns = $fd_data->{'group_need_ns'}->{$group_id};
+    my @indices = (0 .. ($group_need_ns || 1) - 1);
     if ($args->{'sort_by'}) {
         # we don't need to actually sort the values, just rejigger the indices.
         if ($args->{'numeric'}) {
@@ -118,7 +119,8 @@ sub hdlr_Field {
     my $builder = $ctx->stash('builder');
     my $tokens  = $ctx->stash('tokens');
     my $out;
-    for (my $i = 0; $i < $fd_data->{'group_need_ns'}->{$group_id}; $i++) {
+    my $group_need_ns = $fd_data->{'group_need_ns'}->{$group_id} || 0;
+    for (my $i = 0; $i < $group_need_ns; $i++) {
         next if (%instances && !$instances{$i+1});
         local $ctx->{'__stash'}{"$stash_key:instance"} = $i;
         my $text = $builder->build( $ctx, $tokens )
@@ -166,7 +168,8 @@ sub hdlr_IfFieldGroup {
     my @group_ids = get_group_ids($fd_data, $ctx, $args);
     # return true if any instance of any field in this group has a value
     for my $group_id (@group_ids) {
-        for (my $i = 0; $i < $fd_data->{'group_need_ns'}->{$group_id}; $i++) {
+        my $group_need_ns = $fd_data->{'group_need_ns'}->{$group_id} || 0;
+        for (my $i = 0; $i < $group_need_ns; $i++) {
             next if (%instances && !$instances{$i+1});
             for my $field (@{$fd_data->{'grouped_fields'}->{$group_id}}) {
                 my $values = $fd_data->{'values'}->{$field->name};
@@ -203,7 +206,8 @@ sub hdlr_IfField {
         # return true if any instance of this field has a value
         my $values = $fd_data->{'values'}->{$field};
         next unless ($values && @$values);
-        for my $i (%instances ? (keys %instances) : (0 .. $fd_data->{'group_need_ns'}->{$group_id})) {
+        my $group_need_ns = $fd_data->{'group_need_ns'}->{$group_id} || 0;
+        for my $i (%instances ? (keys %instances) : (0 .. $group_need_ns)) {
             next unless $values->[$i];
             return 1 if $values->[$i]->value;
         }
@@ -293,7 +297,7 @@ sub hdlr_FieldGroupCount {
     my $group_id = get_group_id($fd_data, $ctx, $args);
     return $ctx->error('Group not found') unless $group_id;
     my $n = $fd_data->{'group_need_ns'}->{$group_id};
-    return 0 || $n;
+    return $n || 0;
 }
 
 sub hdlr_FieldGroupLabel {
