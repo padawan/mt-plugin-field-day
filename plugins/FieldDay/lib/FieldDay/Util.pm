@@ -142,10 +142,12 @@ sub load_fields {
             $terms = $ctx->stash('fd:value_terms')
                 ? { %{$ctx->stash('fd:value_terms')}, 'key' => $field->name }
                 : app_value_terms(MT->instance, $field->name);
-            for my $value (FieldDay::Value->load($terms)) {
+            my $loadargs = { sort => 'id', direction => 'descend' };
+            for my $value (FieldDay::Value->load( $terms, $loadargs )) {
                 $values->{$field->name} ||= [];
                 my $i = ($value->instance && ($value->instance > 0)) ? ($value->instance - 1) : 0;
-                $values->{$field->name}->[$i] = $value;
+                $values->{$field->name}->[$i] = $value
+                    unless defined $values->{$field->name}->[$i];
             }
         }
     }
