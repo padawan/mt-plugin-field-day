@@ -87,7 +87,7 @@ sub use_type {
         my $types = types('object');
         if (!$types->{$use_type}) {
             for my $key (keys %$types) {
-                if ($types->{$key}->[0]->{'object_mt_type'} eq $use_type) {
+                if (($types->{$key}->[0]->{'object_mt_type'}||'') eq $use_type) {
                     $use_type = $types->{$key}->[0]->{'object_type'};
                     last;
                 }
