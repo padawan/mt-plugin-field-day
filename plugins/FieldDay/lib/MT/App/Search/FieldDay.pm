@@ -36,6 +36,23 @@ sub core_parameters {
     my $app = shift;
     my $params = $app->SUPER::core_parameters();
     my %filter_types = %{$params->{types}->{entry}->{filter_types}};
+
+    # Add filters for filtering by field
+    my $q = $app->param;
+    my $blog_id = $q->param('blog_id') || $app->first_blog_id();
+    my %terms = (
+        type => 'field',
+        object_type => 'entry',
+        blog_id => $blog_id,
+    );
+    my %args = (
+        'sort' => 'order',
+        'direction' => 'ascend',
+    );
+    for my $field (MT->model('fdsetting')->load(\%terms, \%args)) {
+        $filter_types{$field->name} = \&_filter_by_field;
+    }
+
     $params->{types}->{entry}->{filter_types} = {
         linking_ids => \&_join_linking_ids,
         linked_ids => \&_join_linked_ids,
@@ -277,6 +294,27 @@ sub _join_linking_ids {
             'object_id' => \"= $id_col", #"
             'value'        => \@ids,
             'key' => $app->param('LinkField'),
+            'object_type' => $ot->{'object_mt_type'} || $ot->{'object_type'},
+        },
+        {
+            'unique' => 1,
+        }
+    );
+}
+
+sub _filter_by_field {
+    my ($app, $term) = @_;
+    return unless $term->{term};
+    my $type = $app->{searchparam}{Type};
+    my $ot = FieldDay::YAML->object_type(use_type($type));
+    my $id_col = id_col($ot);
+    require FieldDay::Value;
+    return FieldDay::Value->join_on(
+        undef,
+        {
+            'object_id'   => \"= $id_col", #"
+            'value'       => $term->{term},
+            'key'         => $term->{field},
             'object_type' => $ot->{'object_mt_type'} || $ot->{'object_type'},
         },
         {
