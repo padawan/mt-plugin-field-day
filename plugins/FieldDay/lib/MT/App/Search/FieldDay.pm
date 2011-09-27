@@ -291,9 +291,9 @@ sub _join_linking_ids {
     return FieldDay::Value->join_on(
         undef,
         {
-            'object_id' => \"= $id_col", #"
-            'value'        => \@ids,
-            'key' => $app->param('LinkField'),
+            'object_id'   => \"= $id_col", #"
+            'value'       => \@ids,
+            'key'         => $app->param('LinkField'),
             'object_type' => $ot->{'object_mt_type'} || $ot->{'object_type'},
         },
         {
@@ -325,12 +325,13 @@ sub _join_linking_ids {
             {
                 'join' => FieldDay::Value->join_on( 
                     undef, 
-                    { 
-                        'object_id' => \"= $id_col", #"
-                        'object_type' => $ot->{'object_mt_type'} || $ot->{'object_type'},
-                        'value' => $term->{term},
-                        'key' => $term->{field},
-                    },
+                    [
+                        { 'object_id' => \"= $id_col" } #"
+                        => -and => { 'object_type' => $ot->{'object_mt_type'} || $ot->{'object_type'} }
+                        => -and => [ { 'value' => $term->{term} }
+                                     => -or => { 'value_text' => $term->{term} } ]
+                        => -and => { 'key' => $term->{field} }
+                    ],
                     {
                         'unique' => 1,
                     }
