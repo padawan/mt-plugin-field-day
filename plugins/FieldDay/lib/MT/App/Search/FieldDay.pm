@@ -321,7 +321,7 @@ sub _join_linking_ids {
         # Save entry IDs returned in persistent @ids variable to further filter 
         #   entry ID list if more than one fd field is used as a filter
         $iter = $class->load_iter(
-            (@ids ? { 'id' => [ \@ids ] } : undef ),
+            (@ids ? { 'id' => \@ids } : undef ),
             {
                 'join' => FieldDay::Value->join_on( 
                     undef, 
@@ -360,7 +360,7 @@ sub _join_linking_ids {
                 undef, 
                 [ 
                      { 'object_id'   => \"= $id_col" }  #"
-                     => -and => { 'object_id' => [ \@ids ] }
+                     => -and => { 'object_id' => \@ids }
                      => -and => { 'object_type' => $ot->{'object_mt_type'} || $ot->{'object_type'} }
                 ],
                 { 'unique' => 1 }
