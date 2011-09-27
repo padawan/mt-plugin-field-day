@@ -319,34 +319,56 @@ sub _join_linking_ids {
         my $class = $ot->{object_class};
         my $iter;
 
+        # Get type of fd field using fd field name
+        my %field_terms = (
+            type        => 'field',
+            object_type => 'entry',
+            blog_id     => $blog_id,
+            name        => $term->{field},
+        );
+        my $field = MT->model('fdsetting')->load(\%field_terms, undef) or return;
+        my $field_type = $field->data->{'type'};
+
         # Perform query of MT::Entry table for single fd key => value
         # Save entry IDs returned in persistent @ids variable to further filter 
         #   entry ID list if more than one fd field is used as a filter
-        $iter = $class->load_iter(
-            {
-                status => 2,  #MT::Entry::RELEASE()
-                class => 'entry',
-                blog_id => $blog_id,
-                ( @ids ? ( 'id' => \@ids ) : () ),
-            },
-            {
-                'join' => FieldDay::Value->join_on( 
-                    undef, 
-                    [
-                        { 'object_id' => \"= $id_col" } #"
-                        => -and => { 'object_type' => $ot->{'object_mt_type'} || $ot->{'object_type'} }
-                        => -and => [ { 'value' => $term->{term} }
-                                     => -or => { 'value_text' => $term->{term} } ]
-                        => -and => { 'key' => $term->{field} }
-                    ],
-                    {
-                        'unique' => 1,
-                    }
-                ),
-                'fetchonly' => [ 'id' ],
-                'no_triggers' => 1 ,
-            }
-        );
+
+        my $terms = {
+            status => 2,  #MT::Entry::RELEASE()
+            class => 'entry',
+            blog_id => $blog_id,
+            ( @ids ? ( 'id' => \@ids ) : () ),
+        };
+
+        my $join_on_terms;
+        if ( $field_type =~ /^Text(?:Area)?$/ ) {
+            # Partial match for text and textarea fields
+            $join_on_terms = [
+                { 'object_id' => \"= $id_col" } #"
+                => -and => { 'object_type' => $ot->{'object_mt_type'} || $ot->{'object_type'} }
+                => -and => [ { 'value' => { like => '%' . $term->{term} . '%' } }
+                             => -or => { 'value_text' => { like => '%' . $term->{term} . '%' } } ]
+                => -and => { 'key' => $term->{field} }
+            ];
+        } else {
+            # Exact match for all other types of fields
+            $join_on_terms = [
+                { 'object_id' => \"= $id_col" } #"
+                => -and => { 'object_type' => $ot->{'object_mt_type'} || $ot->{'object_type'} }
+                => -and => [ { 'value' => $term->{term} }
+                             => -or => { 'value_text' => $term->{term} } ]
+                => -and => { 'key' => $term->{field} }
+            ];
+        }
+
+        my $args = {
+            'join' => FieldDay::Value->join_on( undef, $join_on_terms, {'unique' => 1} ),
+            'fetchonly' => [ 'id' ],
+            'no_triggers' => 1 ,
+        };
+
+        $iter = $class->load_iter($terms, $args);
+
         @ids = ();
         while (my $e = $iter->()) {
             push @ids, $e->id;
