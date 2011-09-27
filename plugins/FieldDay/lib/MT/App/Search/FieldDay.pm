@@ -311,6 +311,8 @@ sub _join_linking_ids {
         my ($app, $term) = @_;
         return unless $term->{term};
 
+        my $q = $app->param;
+        my $blog_id = $q->param('blog_id') || $app->first_blog_id();
         my $type = $app->{searchparam}{Type};
         my $ot = FieldDay::YAML->object_type(use_type($type));
         my $id_col = id_col($ot);
@@ -321,7 +323,12 @@ sub _join_linking_ids {
         # Save entry IDs returned in persistent @ids variable to further filter 
         #   entry ID list if more than one fd field is used as a filter
         $iter = $class->load_iter(
-            (@ids ? { 'id' => \@ids } : undef ),
+            {
+                status => 2,  #MT::Entry::RELEASE()
+                class => 'entry',
+                blog_id => $blog_id,
+                ( @ids ? ( 'id' => \@ids ) : () ),
+            },
             {
                 'join' => FieldDay::Value->join_on( 
                     undef, 
