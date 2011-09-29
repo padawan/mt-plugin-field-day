@@ -324,31 +324,48 @@ sub _filter_by_field {
     my $field = MT->model('fdsetting')->load(\%field_terms, undef) or return;
     my $field_type = $field->data->{'type'};
 
-    my $join_on_terms;
+    # Parse field value into terms
+    my $query = $term->{term};
+    if ( 'PHRASE' eq $term->{query} ) {
+        $query =~ s/'/"/g;
+    }
+
+    # No searching by fdvalue_id
+    # my $can_search_by_id = $query =~ /^[0-9]*$/ ? 1 : 0;
+
+    require Lucene::QueryParser;
+    my $lucene_struct = Lucene::QueryParser::parse_query($query);
+    if ( 'PROHIBITED' eq $term->{type} ) {
+        $_->{type} = 'PROHIBITED' foreach @$lucene_struct;
+    }
+
+    my $match;
     if ( $field_type =~ /^Text(?:Area)?$/ ) {
         # Partial match for text and textarea fields
-        $join_on_terms = [
-            { 'object_id' => \"= $id_col" } #"
-            => -and => { 'object_type' => $ot->{'object_mt_type'} || $ot->{'object_type'} }
-            => -and => [ { 'value' => { like => '%' . $term->{term} . '%' } }
-                         => -or => { 'value_text' => { like => '%' . $term->{term} . '%' } } ]
-            => -and => { 'key' => $term->{field} }
-        ];
+        $match = 'like';
     } else {
         # Exact match for all other types of fields
-        $join_on_terms = [
-            { 'object_id' => \"= $id_col" } #"
-            => -and => { 'object_type' => $ot->{'object_mt_type'} || $ot->{'object_type'} }
-            => -and => [ { 'value' => $term->{term} }
-                         => -or => { 'value_text' => $term->{term} } ]
-            => -and => { 'key' => $term->{field} }
-        ];
+        $match = 1;
     }
+
+    my ($terms)
+        = $app->_query_parse_core( $lucene_struct, {
+            # No searching by fdvalue_id
+            # ( $can_search_by_id ? ( id => 1 ) : () ),
+            value      => $match,
+            value_text => $match,
+            },
+        {} );
+    return unless $terms && @$terms;
+
+    push @$terms, '-and', { 'key' => $term->{field} };
+    push @$terms, '-and', { 'object_id' => \"= $id_col", }; #"
+    push @$terms, '-and', { 'object_type' => $ot->{'object_mt_type'} || $ot->{'object_type'} };
 
     require FieldDay::Value;
     return FieldDay::Value->join_on(
         undef, 
-        $join_on_terms,
+        $terms,
         {
             'unique' => 1,
             'alias'  => $term->{field},
