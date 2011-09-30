@@ -166,7 +166,7 @@ sub execute {
     }
     if ($app->{searchparam}{SearchResultDisplay} eq 'descend') {
         if ($app->param('sort_numeric')) {
-            @results = sort { ($values{$a->id} || 0) <=> ($values{$b->id} || 0) } @results;
+            @results = sort { ($values{$b->id} || 0) <=> ($values{$a->id} || 0) } @results;
         } else {
             @results = sort { ($values{$b->id} || '') cmp ($values{$a->id} || '') } @results;
         }
