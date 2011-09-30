@@ -18,7 +18,7 @@ use base qw( MT::App::Search );
 use MT::ObjectDriver::SQL qw( :constants );
 use FieldDay::Value;
 use FieldDay::YAML qw( object_type );
-use FieldDay::Util qw( use_type );
+use FieldDay::Util qw( use_type require_type );
 use Data::Dumper;
 
 sub id { 'new_search' }
@@ -124,6 +124,7 @@ sub execute {
     my @results = $class->load( $terms, $args )
         or $app->error($class->errstr);
     my @ids = map { $_->id } @results;
+
     require FieldDay::YAML;
     require FieldDay::Value;
     my $ot = FieldDay::YAML->object_type_by_class($class);
@@ -133,6 +134,29 @@ sub execute {
         object_id => \@ids,
     });
     my %values = map { $_->object_id => lc($_->value || $_->value_text || '') } @values;
+
+    # Get type of fd field, to see if sort field is a Linked* type of field
+    my $q = $app->param;
+    my $blog_id = $q->param('blog_id') || $app->first_blog_id();
+    my %field_terms = (
+        type        => 'field',
+        object_type => 'entry',
+        blog_id     => $blog_id,
+        name        => $app->param('sort_field'),
+    );
+    my $field = MT->model('fdsetting')->load(\%field_terms, undef);
+    my $field_type = $field->data->{'type'} if $field;
+    my $linked_class = require_type(MT->instance, 'field', $field->data->{'type'});
+
+    # Replace linked object id value with default field value from linked object
+    #   (title for entries, label for categories, name for blogs, etc.)
+    if ( $field_type =~ /^Linked/ ) {
+        foreach my $obj_id (keys %values) {
+            my $obj = MT->model($linked_class->object_type)->load($values{$obj_id});
+            $values{$obj_id} = ( $obj ? lc($linked_class->object_label($obj)) : '' );
+        }
+    }
+
     my $max;
     if ($limit) {
         $max = $limit + $offset - 1;
