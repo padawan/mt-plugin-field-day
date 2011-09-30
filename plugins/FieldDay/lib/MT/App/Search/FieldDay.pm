@@ -49,7 +49,7 @@ sub core_parameters {
         'sort' => 'order',
         'direction' => 'ascend',
     );
-    for my $field (MT->model('fdsetting')->load(\%terms, \%args)) {
+    for my $field (MT->model('fdsetting')->load_with_default(\%terms, \%args)) {
         $filter_types{$field->name} = \&_filter_by_field;
     }
 
@@ -144,7 +144,7 @@ sub execute {
         blog_id     => $blog_id,
         name        => $app->param('sort_field'),
     );
-    my $field = MT->model('fdsetting')->load(\%field_terms, undef);
+    my $field = (MT->model('fdsetting')->load_with_default(\%field_terms, undef))[0];
     my $field_type = $field->data->{'type'} if $field;
     my $linked_class = require_type(MT->instance, 'field', $field->data->{'type'});
 
@@ -345,7 +345,7 @@ sub _filter_by_field {
         blog_id     => $blog_id,
         name        => $term->{field},
     );
-    my $field = MT->model('fdsetting')->load(\%field_terms, undef) or return;
+    my $field = (MT->model('fdsetting')->load_with_default(\%field_terms, undef))[0] or return;
     my $field_type = $field->data->{'type'};
 
     # Parse field value into terms
