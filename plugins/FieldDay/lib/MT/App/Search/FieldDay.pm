@@ -164,7 +164,7 @@ sub execute {
     if (!$max || ($max > $#results)) {
         $max = $#results;
     }
-    if ($app->param('SearchResultDisplay') && ($app->param('SearchResultDisplay') eq 'descend')) {
+    if ($app->{searchparam}{SearchResultDisplay} eq 'descend') {
         if ($app->param('sort_numeric')) {
             @results = sort { ($values{$a->id} || 0) <=> ($values{$b->id} || 0) } @results;
         } else {
