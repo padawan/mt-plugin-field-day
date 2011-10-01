@@ -125,37 +125,97 @@ sub execute {
         or $app->error($class->errstr);
     my @ids = map { $_->id } @results;
 
+    # Information for each sort column and how it should be sorted
+    #   column1:direction:numeric,column2:direction:numeric,...
+    my @sort_cols;
+    my $sort_by = $app->param('sort_field');
+    $sort_by =~ s/[^\w\-\.\,\:]+//g;
+    if ($sort_by) {
+        my @sort_bys = split ',', $sort_by;
+        foreach my $key (@sort_bys) {
+            my ($column, $direction, $numeric) = split ':', $key;
+            $direction ||= $app->{searchparam}{SearchResultDisplay};
+            $direction = ( ( $direction =~ /^desc(?:end)?$/i ) ? 'descend' : 'ascend' );
+            $numeric ||= $app->param('sort_numeric');
+            $numeric = ( $numeric ? 1 : 0 );
+            my $column_type = ( ($class->has_column($column)) ? ($class->datasource) : 'fdvalue' );
+            push @sort_cols, {
+                column      => $column,
+                column_type => $column_type,
+                direction   => $direction,
+                numeric     => $numeric,
+            };
+        }
+    }
+
     require FieldDay::YAML;
     require FieldDay::Value;
     my $ot = FieldDay::YAML->object_type_by_class($class);
-    my @values = FieldDay::Value->load({
-        key => $app->param('sort_field'),
-        object_type => $ot->{object_type},
-        object_id => \@ids,
-    });
-    my %values = map { $_->object_id => lc($_->value || $_->value_text || '') } @values;
 
-    # Get type of fd field, to see if sort field is a Linked* type of field
-    my $q = $app->param;
-    my $blog_id = $q->param('blog_id') || $app->first_blog_id();
-    my %field_terms = (
-        type        => 'field',
-        object_type => 'entry',
-        blog_id     => $blog_id,
-        name        => $app->param('sort_field'),
-    );
-    my $field = (MT->model('fdsetting')->load_with_default(\%field_terms, undef))[0];
-    my $field_type = $field->data->{'type'} if $field;
-    my $linked_class = require_type(MT->instance, 'field', $field->data->{'type'});
+    # Create array of sort keys
+    my @sort_keys;
+    foreach my $sort_column (@sort_cols) {
+        my @values;
+        my %values;
+        if ( $sort_column->{column_type} eq 'fdvalue' ) {
+            # Create sort keys for FieldDay field
+            @values = FieldDay::Value->load({
+                key => $sort_column->{column},
+                object_type => $ot->{object_type},
+                object_id => \@ids,
+            });
+            %values = map { $_->object_id => lc($_->value || $_->value_text || '') } @values;
 
-    # Replace linked object id value with default field value from linked object
-    #   (title for entries, label for categories, name for blogs, etc.)
-    if ( $field_type =~ /^Linked/ ) {
-        foreach my $obj_id (keys %values) {
-            my $obj = MT->model($linked_class->object_type)->load($values{$obj_id});
-            $values{$obj_id} = ( $obj ? lc($linked_class->object_label($obj)) : '' );
+            # Get type of fd field, to see if sort field is a Linked* type of field
+            my $q = $app->param;
+            my $blog_id = $q->param('blog_id') || $app->first_blog_id();
+            my %field_terms = (
+                type        => 'field',
+                object_type => 'entry',
+                blog_id     => $blog_id,
+                name        => $sort_column->{column},
+            );
+            my $field = (MT->model('fdsetting')->load_with_default(\%field_terms, undef))[0];
+            my $field_type = $field->data->{'type'} if $field;
+            my $linked_class = require_type(MT->instance, 'field', $field->data->{'type'});
+
+            # Replace linked object id value with default field value from linked object
+            #   (title for entries, label for categories, name for blogs, etc.)
+            if ( $field_type =~ /^Linked/ ) {
+                foreach my $obj_id (keys %values) {
+                    my $obj = MT->model($linked_class->object_type)->load($values{$obj_id});
+                    $values{$obj_id} = ( $obj ? lc($linked_class->object_label($obj)) : '' );
+                }
+            }
+        } else {
+            # Create sort keys for MT::Entry field
+            my $class_column = $sort_column->{column};
+            %values = map { $_->id => lc($_->$class_column || '') } @results;
         }
+        push @sort_keys, \%values;
     }
+
+    # Do the sort
+    @results = sort { 
+        my $result;
+        for my $i (0 .. $#sort_keys) {
+            if ( $sort_cols[$i]->{direction} eq 'descend' ) {
+                if ( $sort_cols[$i]->{numeric} ) {
+                    $result = ($sort_keys[$i]->{$b->id} || 0) <=> ($sort_keys[$i]->{$a->id} || 0);
+                } else {
+                    $result = ($sort_keys[$i]->{$b->id} || '') cmp ($sort_keys[$i]->{$a->id} || '');
+                }
+            } else {
+                if ( $sort_cols[$i]->{numeric} ) {
+                    $result = ($sort_keys[$i]->{$a->id} || 0) <=> ($sort_keys[$i]->{$b->id} || 0);
+                } else {
+                    $result = ($sort_keys[$i]->{$a->id} || '') cmp ($sort_keys[$i]->{$b->id} || '');
+                }
+            }
+            return $result if $result;
+        }
+        return 0;
+    } @results;
 
     my $max;
     if ($limit) {
@@ -164,19 +224,7 @@ sub execute {
     if (!$max || ($max > $#results)) {
         $max = $#results;
     }
-    if ($app->{searchparam}{SearchResultDisplay} eq 'descend') {
-        if ($app->param('sort_numeric')) {
-            @results = sort { ($values{$b->id} || 0) <=> ($values{$a->id} || 0) } @results;
-        } else {
-            @results = sort { ($values{$b->id} || '') cmp ($values{$a->id} || '') } @results;
-        }
-    } else {
-        if ($app->param('sort_numeric')) {
-            @results = sort { ($values{$a->id} || 0) <=> ($values{$b->id} || 0) } @results;
-        } else {
-            @results = sort { ($values{$a->id} || '') cmp ($values{$b->id} || '') } @results;
-        }
-    }
+
     @results = @results[$offset .. $max];
     my $iter = sub { shift @results; };
     ( $count, $iter );
