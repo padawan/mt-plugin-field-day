@@ -31,6 +31,12 @@ padding:10px;
 background:#fff;
 border:1px solid #000;
 }
+#footer {
+position: relative !important;
+}
+#container {
+overflow: auto !important;
+}
 </style>
 <script type="text/javascript" src="<mt:var name="static_uri">plugins/FieldDay/flexRows.js"></script>
 <script type="text/javascript" src="<mt:var name="static_uri">plugins/FieldDay/fdSettings.js"></script>
@@ -66,7 +72,7 @@ fd_setting_list[fd_setting_list.length] = '<mt:var name="group">';
 </mt:if>
 </mt:setvarblock>
 
-<mt:setvarblock name="content_nav">
+<mt:setvarblock name="object_nav">
 <mt:include name="include/list_setting_nav.tmpl">
 </mt:setvarblock>
 

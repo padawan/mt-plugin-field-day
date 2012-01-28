@@ -40,8 +40,7 @@ function submitCopyBlog() {
 }
 </script>
 </mt:if>
-<h3>Configure:</h3>
-<ul>
+<ul class="object-nav">
 <mt:loop name="content_nav_loop">
     <li<mt:if name="active"> class="active"</mt:if>><a href="<mt:var name="script_url">?__mode=fd_cfg_<mt:var name="type">&_type=<mt:var name="setting_object_type">&blog_id=<mt:var name="blog_id">"><__trans phrase="<mt:var name="label">"></a></li>
 </mt:loop>
@@ -63,8 +62,7 @@ function submitCopyBlog() {
 </li>
 </mt:if>
 </ul>
-<h3>Tools</h3>
-<ul>
+<ul class="object-nav">
 <mt:if name="blog_id">
 <li>
 <a href="javascript:void(0);" onclick="showCopyBlog();">Copy Settings from Blog</a>

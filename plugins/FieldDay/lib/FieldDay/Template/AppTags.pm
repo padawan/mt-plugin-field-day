@@ -207,6 +207,7 @@ padding-bottom:10px;
 }
 .fd-group-parent .field {
 margin-bottom:.75em;
+overflow:visible;
 }
 .fd-field-short {
 width:80px;

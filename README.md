@@ -1,10 +1,13 @@
 # Field Day, a plugin for Movable Type
 
-* Author: Six Apart
-* Copyright: 2008-2010 Six Apart Ltd.
+* Author: Six Apart, ported to MT5 by Ubiquitic
+* Copyright: 2008-2010 Six Apart Ltd. 2012 Ubiquitic.
 * License: GPL
 * Site: <http://www.movabletype.org/>
 
+## Notice
+
+This version of Field Day has been modified by Ubiquitic to work on MT5. It will NOT work on MT4. Please report issues here to help improve this plugin.
 
 ## Overview
 
