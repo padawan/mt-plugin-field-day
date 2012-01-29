@@ -212,6 +212,9 @@ overflow:visible;
 .fd-field-short {
 width:80px;
 }
+.field {
+overflow:visible;
+}
 </style>
 $js
 <fieldset>
