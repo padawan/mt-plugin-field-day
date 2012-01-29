@@ -64,6 +64,7 @@ fd_setting_names['<mt:var name="field">'] = '<mt:var name="field">';
 </mt:loop>
 </script>
 </mt:setvarblock>
+
 <mt:setvarblock name="content_header">
     <mt:if name="saved">
         <mtapp:statusmsg
@@ -73,13 +74,11 @@ fd_setting_names['<mt:var name="field">'] = '<mt:var name="field">';
         </mtapp:statusmsg>
     </mt:if>
 </mt:setvarblock>
+
 <mt:setvarblock name="action_buttons">
 <mt:if name="using_default">
-
 <mt:include name="include/list_using_default.tmpl">
-
 <mt:else>
-
     <input onclick="addRow('options')" type="button" value="<__trans phrase="Add Field">" accesskey="+" title="<__trans phrase="Add Field (+)">" />
     <input onclick="saveSettings(this.form, 'fields')" type="button" value="<__trans phrase="Save Settings">" accesskey="+" title="<__trans phrase="Save Settings">" />
                 <p class="alert-warning-inline" id="delete_warning" style="display: none;margin:5px 0 0 0;">
@@ -89,9 +88,7 @@ fd_setting_names['<mt:var name="field">'] = '<mt:var name="field">';
                 Warning: Deleting a field may result in the loss of existing data.
 
             </p>
-</mt:else>
 </mt:if>
-
 </mt:setvarblock>
 
 <mt:setvarblock name="object_nav">
@@ -100,7 +97,10 @@ fd_setting_names['<mt:var name="field">'] = '<mt:var name="field">';
 
 <mt:include name="include/header.tmpl">
 
-<mtapp:listing>
+<mtapp:listing
+	default="No fields could be found." 
+    empty_message="No fields could be found."
+    hide_pager="1">
 <mt:unless name="using_default">
 <mt:if __first__>
 <thead>
@@ -147,6 +147,9 @@ fd_setting_names['<mt:var name="field">'] = '<mt:var name="field">';
 </tr>
 <mt:if __last__>
 </tbody>
+</mt:if>
+</mt:unless>
+</mtapp:listing>
 <div id="fr_all_hidden_divs">
 <mt:loop name="object_loop">
 <div id="<mt:var name="field">_options_div" class="fd-settings">
@@ -157,8 +160,5 @@ fd_setting_names['<mt:var name="field">'] = '<mt:var name="field">';
 </div>
 </mt:loop>
 </div>
-</mt:if>
-</mt:unless>
-</mtapp:listing>
 
 <mt:include name="include/footer.tmpl">

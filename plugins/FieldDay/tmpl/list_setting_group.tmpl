@@ -76,7 +76,10 @@ fd_setting_list[fd_setting_list.length] = '<mt:var name="group">';
 
 <mt:include name="include/header.tmpl">
 
-<mtapp:listing>
+<mtapp:listing
+	default="No groups could be found." 
+    empty_message="No groups could be found."
+    hide_pager="1">
 <mt:unless name="using_default">
 <mt:if __first__>
 <input type="hidden" name="fd_setting_list" value="<mt:loop name="object_loop" glue=","><mt:var name="group"></mt:loop>" />
