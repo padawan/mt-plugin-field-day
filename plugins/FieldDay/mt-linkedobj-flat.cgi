@@ -24,7 +24,26 @@ my $q = new CGI;
 require FieldDay::Util;
 require FieldDay::Setting;
 
-print "Content-type: text/plain\n\n";
+sub print_encode {
+    my ( $text ) = @_;
+    if ( $mt ) {
+        print Encode::encode( $mt->config->PublishCharset, $text );
+    }
+    else {
+        print Encode::encode_utf8( $text );
+    }
+}
+
+sub print_http_header {
+    if ( exists( $ENV{PERLXS} ) && ( $ENV{PERLXS} eq 'PerlIS' ) ) {
+        print_encode( "HTTP/1.0 200 OK\n" );
+        print_encode( "Connection: close\n" );
+    }
+    print_encode( "Content-Type: text/plain; charset=utf-8\r\n" );
+    print_encode( "Content-Transfer-Encoding: 8bit\r\n\r\n" );
+}
+
+print_http_header();
 
 (my $setting_id = $q->param('setting_id')) || exit;
 (my $setting = FieldDay::Setting->load($setting_id)) || exit;
@@ -32,4 +51,4 @@ print "Content-type: text/plain\n\n";
 my $type = $setting->data->{'type'};
 my $ft = FieldDay::Util::require_type($mt, 'field', $type);
 my $result = $ft->do_query($setting, $q);
-print $result;
+print_encode($result);
