@@ -61,8 +61,6 @@ function submitCopyBlog() {
 </mt:if>
 </li>
 </mt:if>
-</ul>
-<ul class="object-nav">
 <mt:if name="blog_id">
 <li>
 <a href="javascript:void(0);" onclick="showCopyBlog();">Copy Settings from Blog</a>
@@ -72,7 +70,7 @@ function submitCopyBlog() {
 <input type="hidden" name="blog_id" value="<mt:var name="blog_id">" />
 <input type="hidden" name="_type" value="<mt:var name="setting_object_type">" />
 <input type="hidden" name="return_args" value="<mt:var name="return_args">" />
-<strong>Blog ID:</strong>&nbsp; <input type="text" name="from_blog_id" id="from_blog_id" value="" class="text-field" />
+<strong>Blog ID:</strong>&nbsp;<input type="text" name="from_blog_id" id="from_blog_id" value="" class="text-field" />
 <div id="fd-copy-blog-buttons">
 <input type="button" onclick="submitCopyBlog();" value="Copy" />
 <input type="button" onclick="hideCopyBlog();" value="Cancel" />

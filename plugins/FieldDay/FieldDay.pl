@@ -144,16 +144,6 @@ sub init_object_types {
                 }
             }
         }
-        # page actions
-        $page_actions->{$ot->{'object_type'}} = {
-            'configure_fields' => {
-                'label' => 'Configure Fields',
-                'code' => sub { mode_dispatch('cfg_fields', @_, $ot) },
-                $ot->{'has_blog_id'}
-                    ? ('permission' => 'administer_blog')
-                    : ('system_permission' => 'administer')
-            }
-        };
         # menus
         $menus->{"extrafields"} = {
             'label' => 'Extra Fields',

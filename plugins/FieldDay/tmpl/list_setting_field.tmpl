@@ -118,7 +118,7 @@ fd_setting_names['<mt:var name="field">'] = '<mt:var name="field">';
 <tr class="<mt:if name="__odd__">even<mt:else>odd</mt:if>" id="<mt:var name="field">_row"<mt:if name="prototype"> style="display:none;"</mt:if>>
 <td>
 <input type="hidden" name="<mt:var name="field">_order" id="<mt:var name="field">_order" value="<mt:var name="sort_order">" />
-<mt:unless name="prototype"><span id="<mt:var name="field">_unlock"><a href="javascript:void(0)" onclick="unlockRow('<mt:var name="field">')"><img src="<mt:var name="static_uri">images/locked.gif" border="0" /></a></span></mt:unless>
+<mt:unless name="prototype"><span id="<mt:var name="field">_unlock"><a href="javascript:void(0)" onclick="unlockRow('<mt:var name="field">')"><img src="<mt:var name="static_uri">plugins/FieldDay/locked.gif" border="0" /></a></span></mt:unless>
 <a href="javascript:void(0);" onclick="deleteRow('<mt:var name="field">')" id="<mt:var name="field">_delete"<mt:unless name="prototype"> style="display:none;"</mt:unless>><img src="<mt:var name="static_uri">plugins/FieldDay/nav-delete.gif" border="0" /></a>
 <a href="javascript:void(0);" onclick="moveRow('up', '<mt:var name="field">')"><img src="<mt:var name="static_uri">plugins/FieldDay/nav-arrow-up.gif" border="0" /></a>
 <a href="javascript:void(0);" onclick="moveRow('down', '<mt:var name="field">')"><img src="<mt:var name="static_uri">plugins/FieldDay/nav-arrow-down.gif" border="0" /></a>
