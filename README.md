@@ -7,7 +7,7 @@
 
 ## Notice
 
-This version of Field Day has been modified by Ubiquitic to work on MT5. It will NOT work on MT4. Please report issues here to help improve this plugin.
+This version of Field Day has been modified by Ubiquitic to work on MT5. *It will NOT work on MT4*. Please report issues here to help improve this plugin.
 
 ## Overview
 

@@ -2,12 +2,19 @@
 <style type="text/css">
 .fd-copy-blog {
 display:none;
+position:absolute;
+background-color:#fff;
+border:1px solid;
+padding:4px;
 }
 #fd-copy-blog-buttons {
 padding-top:10px;
 }
 .fd-copy-blog input.text-field {
 width:40px;
+}
+.object-nav li.active a {
+background-color: none;
 }
 </style>
 <script type="text/javascript">
@@ -42,7 +49,11 @@ function submitCopyBlog() {
 </mt:if>
 <ul class="object-nav">
 <mt:loop name="content_nav_loop">
-    <li<mt:if name="active"> class="active"</mt:if>><a href="<mt:var name="script_url">?__mode=fd_cfg_<mt:var name="type">&_type=<mt:var name="setting_object_type">&blog_id=<mt:var name="blog_id">"><__trans phrase="<mt:var name="label">"></a></li>
+<mt:if name="active">
+    <li class="active"><__trans phrase="<mt:var name="label">"></li>
+<mt:else>
+    <li><a href="<mt:var name="script_url">?__mode=fd_cfg_<mt:var name="type">&_type=<mt:var name="setting_object_type">&blog_id=<mt:var name="blog_id">"><__trans phrase="<mt:var name="label">"></a></li>
+</mt:if>
 </mt:loop>
 <mt:if name="blog_id">
 <li>

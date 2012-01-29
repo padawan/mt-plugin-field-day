@@ -30,12 +30,13 @@ top:0px;
 padding:10px;
 background:#fff;
 border:1px solid #000;
+z-index:1;
 }
 #footer {
-position: relative !important;
+position: relative;
 }
 #container {
-overflow: auto !important;
+overflow: auto;
 }
 </style>
 <script type="text/javascript" src="<mt:var name="static_uri">plugins/FieldDay/flexRows.js"></script>
@@ -49,6 +50,7 @@ fd_setting_list[fd_setting_list.length] = '<mt:var name="group">';
 </mt:loop>
 </script>
 </mt:setvarblock>
+
 <mt:setvarblock name="content_header">
     <mt:if name="saved">
         <mtapp:statusmsg
@@ -58,17 +60,13 @@ fd_setting_list[fd_setting_list.length] = '<mt:var name="group">';
         </mtapp:statusmsg>
     </mt:if>
 </mt:setvarblock>
+
 <mt:setvarblock name="action_buttons">
 <mt:if name="using_default">
-
 <mt:include name="include/list_using_default.tmpl">
-
 <mt:else>
-
     <input onclick="addRow()" type="button" value="<__trans phrase="Add Group">" accesskey="+" title="<__trans phrase="Add Group (+)">" />
     <input onclick="saveSettings(this.form, 'groups')" type="button" value="<__trans phrase="Save Settings">" accesskey="+" title="<__trans phrase="Save Settings">" />
-
-</mt:else>
 </mt:if>
 </mt:setvarblock>
 
