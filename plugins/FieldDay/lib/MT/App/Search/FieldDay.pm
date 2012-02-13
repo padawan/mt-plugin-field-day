@@ -18,7 +18,7 @@ use base qw( MT::App::Search );
 use MT::ObjectDriver::SQL qw( :constants );
 use FieldDay::Value;
 use FieldDay::YAML qw( object_type );
-use FieldDay::Util qw( use_type );
+use FieldDay::Util qw( use_type require_type );
 use Data::Dumper;
 
 sub id { 'new_search' }
@@ -36,6 +36,23 @@ sub core_parameters {
     my $app = shift;
     my $params = $app->SUPER::core_parameters();
     my %filter_types = %{$params->{types}->{entry}->{filter_types}};
+
+    # Add filters for filtering by field
+    my $q = $app->param;
+    my $blog_id = $q->param('blog_id') || $app->first_blog_id();
+    my %terms = (
+        type => 'field',
+        object_type => 'entry',
+        blog_id => $blog_id,
+    );
+    my %args = (
+        'sort' => 'order',
+        'direction' => 'ascend',
+    );
+    for my $field (MT->model('fdsetting')->load_with_default(\%terms, \%args)) {
+        $filter_types{$field->name} = \&_filter_by_field;
+    }
+
     $params->{types}->{entry}->{filter_types} = {
         linking_ids => \&_join_linking_ids,
         linked_ids => \&_join_linked_ids,
@@ -107,15 +124,99 @@ sub execute {
     my @results = $class->load( $terms, $args )
         or $app->error($class->errstr);
     my @ids = map { $_->id } @results;
+
+    # Information for each sort column and how it should be sorted
+    #   column1:direction:numeric,column2:direction:numeric,...
+    my @sort_cols;
+    my $sort_by = $app->param('sort_field');
+    $sort_by =~ s/[^\w\-\.\,\:]+//g;
+    if ($sort_by) {
+        my @sort_bys = split ',', $sort_by;
+        foreach my $key (@sort_bys) {
+            my ($column, $direction, $numeric) = split ':', $key;
+            $direction ||= $app->{searchparam}{SearchResultDisplay};
+            $direction = ( ( $direction =~ /^desc(?:end)?$/i ) ? 'descend' : 'ascend' );
+            $numeric ||= $app->param('sort_numeric');
+            $numeric = ( $numeric ? 1 : 0 );
+            my $column_type = ( ($class->has_column($column)) ? ($class->datasource) : 'fdvalue' );
+            push @sort_cols, {
+                column      => $column,
+                column_type => $column_type,
+                direction   => $direction,
+                numeric     => $numeric,
+            };
+        }
+    }
+
     require FieldDay::YAML;
     require FieldDay::Value;
     my $ot = FieldDay::YAML->object_type_by_class($class);
-    my @values = FieldDay::Value->load({
-        key => $app->param('sort_field'),
-        object_type => $ot->{object_type},
-        object_id => \@ids,
-    });
-    my %values = map { $_->object_id => lc($_->value || $_->value_text || '') } @values;
+
+    # Create array of sort keys
+    my @sort_keys;
+    foreach my $sort_column (@sort_cols) {
+        my @values;
+        my %values;
+        if ( $sort_column->{column_type} eq 'fdvalue' ) {
+            # Create sort keys for FieldDay field
+            @values = FieldDay::Value->load({
+                key => $sort_column->{column},
+                object_type => $ot->{object_type},
+                object_id => \@ids,
+            });
+            %values = map { $_->object_id => lc($_->value || $_->value_text || '') } @values;
+
+            # Get type of fd field, to see if sort field is a Linked* type of field
+            my $q = $app->param;
+            my $blog_id = $q->param('blog_id') || $app->first_blog_id();
+            my %field_terms = (
+                type        => 'field',
+                object_type => 'entry',
+                blog_id     => $blog_id,
+                name        => $sort_column->{column},
+            );
+            my $field = (MT->model('fdsetting')->load_with_default(\%field_terms, undef))[0];
+            my $field_type = $field->data->{'type'} if $field;
+            my $linked_class = require_type(MT->instance, 'field', $field->data->{'type'});
+
+            # Replace linked object id value with default field value from linked object
+            #   (title for entries, label for categories, name for blogs, etc.)
+            if ( $field_type =~ /^Linked/ ) {
+                foreach my $obj_id (keys %values) {
+                    my $obj = MT->model($linked_class->object_type)->load($values{$obj_id});
+                    $values{$obj_id} = ( $obj ? lc($linked_class->object_label($obj)) : '' );
+                }
+            }
+        } else {
+            # Create sort keys for MT::Entry field
+            my $class_column = $sort_column->{column};
+            %values = map { $_->id => lc($_->$class_column || '') } @results;
+        }
+        push @sort_keys, \%values;
+    }
+
+    # Do the sort
+    @results = sort { 
+        my $result;
+        for my $i (0 .. $#sort_keys) {
+            if ( $sort_cols[$i]->{direction} eq 'descend' ) {
+                if ( $sort_cols[$i]->{numeric} ) {
+                    $result = ($sort_keys[$i]->{$b->id} || 0) <=> ($sort_keys[$i]->{$a->id} || 0);
+                } else {
+                    $result = ($sort_keys[$i]->{$b->id} || '') cmp ($sort_keys[$i]->{$a->id} || '');
+                }
+            } else {
+                if ( $sort_cols[$i]->{numeric} ) {
+                    $result = ($sort_keys[$i]->{$a->id} || 0) <=> ($sort_keys[$i]->{$b->id} || 0);
+                } else {
+                    $result = ($sort_keys[$i]->{$a->id} || '') cmp ($sort_keys[$i]->{$b->id} || '');
+                }
+            }
+            return $result if $result;
+        }
+        return 0;
+    } @results;
+
     my $max;
     if ($limit) {
         $max = $limit + $offset - 1;
@@ -123,19 +224,7 @@ sub execute {
     if (!$max || ($max > $#results)) {
         $max = $#results;
     }
-    if ($app->param('SearchResultDisplay') && ($app->param('SearchResultDisplay') eq 'descend')) {
-        if ($app->param('sort_numeric')) {
-            @results = sort { ($values{$a->id} || 0) <=> ($values{$b->id} || 0) } @results;
-        } else {
-            @results = sort { ($values{$b->id} || '') cmp ($values{$a->id} || '') } @results;
-        }
-    } else {
-        if ($app->param('sort_numeric')) {
-            @results = sort { ($values{$a->id} || 0) <=> ($values{$b->id} || 0) } @results;
-        } else {
-            @results = sort { ($values{$a->id} || '') cmp ($values{$b->id} || '') } @results;
-        }
-    }
+
     @results = @results[$offset .. $max];
     my $iter = sub { shift @results; };
     ( $count, $iter );
@@ -258,6 +347,7 @@ sub _join_linked_ids {
         },
         {
             'unique' => 1,
+            'alias'  => 'linked_ids',
         }
     );
 }
@@ -274,13 +364,83 @@ sub _join_linking_ids {
     return FieldDay::Value->join_on(
         undef,
         {
-            'object_id' => \"= $id_col", #"
-            'value'        => \@ids,
-            'key' => $app->param('LinkField'),
+            'object_id'   => \"= $id_col", #"
+            'value'       => \@ids,
+            'key'         => $app->param('LinkField'),
             'object_type' => $ot->{'object_mt_type'} || $ot->{'object_type'},
         },
         {
             'unique' => 1,
+            'alias'  => 'linking_ids',
+        }
+    );
+}
+
+sub _filter_by_field {
+    my ($app, $term) = @_;
+    return unless $term->{term};
+
+    my $q = $app->param;
+    my $blog_id = $q->param('blog_id') || $app->first_blog_id();
+    my $type = $app->{searchparam}{Type};
+    my $ot = FieldDay::YAML->object_type(use_type($type));
+    my $id_col = id_col($ot);
+
+    # Get type of fd field using fd field name
+    my %field_terms = (
+        type        => 'field',
+        object_type => 'entry',
+        blog_id     => $blog_id,
+        name        => $term->{field},
+    );
+    my $field = (MT->model('fdsetting')->load_with_default(\%field_terms, undef))[0] or return;
+    my $field_type = $field->data->{'type'};
+
+    # Parse field value into terms
+    my $query = $term->{term};
+    if ( 'PHRASE' eq $term->{query} ) {
+        $query =~ s/'/"/g;
+    }
+
+    # No searching by fdvalue_id
+    # my $can_search_by_id = $query =~ /^[0-9]*$/ ? 1 : 0;
+
+    require Lucene::QueryParser;
+    my $lucene_struct = Lucene::QueryParser::parse_query($query);
+    if ( 'PROHIBITED' eq $term->{type} ) {
+        $_->{type} = 'PROHIBITED' foreach @$lucene_struct;
+    }
+
+    my $match;
+    if ( $field_type =~ /^Text(?:Area)?$/ ) {
+        # Partial match for text and textarea fields
+        $match = 'like';
+    } else {
+        # Exact match for all other types of fields
+        $match = 1;
+    }
+
+    my ($terms)
+        = $app->_query_parse_core( $lucene_struct, {
+            # No searching by fdvalue_id
+            # ( $can_search_by_id ? ( id => 1 ) : () ),
+            value      => $match,
+            value_text => $match,
+            },
+        {} );
+    return unless $terms && @$terms;
+
+    push @$terms, '-and', { 'key' => $term->{field} };
+    push @$terms, '-and', { 'object_id' => \"= $id_col", }; #"
+    push @$terms, '-and', { 'object_type' => $ot->{'object_mt_type'} || $ot->{'object_type'} };
+
+    require FieldDay::Value;
+    return FieldDay::Value->join_on(
+        undef, 
+        $terms,
+        {
+            'unique' => 1,
+            'alias'  => $term->{field},
         }
     );
 }
