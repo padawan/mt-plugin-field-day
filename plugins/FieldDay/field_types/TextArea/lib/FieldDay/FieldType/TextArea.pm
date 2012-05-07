@@ -25,7 +25,7 @@ sub label {
 sub options {
     my $class = shift;
     return {
-        'height' => 200,
+        'height' => undef,
         'width' => undef,
     };
 }
@@ -34,9 +34,6 @@ sub options {
 sub pre_render {
     my $class = shift;
     my ($param) = @_;
-    if ($param->{'width'}) {
-        $param->{'wrapper_width'} = $param->{'width'} + 20;
-    }
 }
 
 sub pre_publish {

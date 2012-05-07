@@ -68,7 +68,7 @@ sub block_loop {
     }
     @entries = @{$class->sort_objects('MT::Entry', \@entries, $ctx, $args)};
     local $ctx->{__stash}{entries} = \@entries;
-    return MT::Template::Context::_hdlr_entries($ctx, $args, $cond);
+    return MT::Template::Tags::Entry::_hdlr_entries($ctx, $args, $cond);
 }
 
 sub val {

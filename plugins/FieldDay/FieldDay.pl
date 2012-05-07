@@ -17,7 +17,7 @@ use strict;
 use Data::Dumper;
 
 use vars qw( $VERSION $SCHEMA_VERSION );
-$VERSION = '1.5.1b2';
+$VERSION = '1.5.2';
 $SCHEMA_VERSION = '1.0';
 
 use base qw( MT::Plugin );
@@ -29,8 +29,8 @@ use FieldDay::Util qw( require_type can_edit );
 my $plugin = MT::Plugin::FieldDay->new({
     'id' => 'FieldDay',
     'name' => 'Field Day',
-    'author_name' => 'Six Apart, ported to MT5 by Ubiquitic',
-    'author_link' => 'http://www.movabletype.org/',
+    'author_name' => 'MT5 port by Ubiquitic, original code by Six Apart',
+    'author_link' => 'https://github.com/padawan/mt-plugin-field-day/',
     'description' => 'Add fields to Movable Type.',
     'version' => $VERSION,
     'schema_version' => $SCHEMA_VERSION,

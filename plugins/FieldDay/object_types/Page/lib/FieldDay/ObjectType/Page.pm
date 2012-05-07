@@ -39,7 +39,7 @@ sub block_loop {
     }
     @pages = @{$class->sort_objects('MT::Page', \@pages, $ctx, $args)};
     local $ctx->{__stash}{entries} = \@pages;
-    return MT::Template::Context::_hdlr_pages($ctx, $args, $cond);
+    return MT::Template::Tags::Page::_hdlr_pages($ctx, $args, $cond);
 }
 
 sub val {
