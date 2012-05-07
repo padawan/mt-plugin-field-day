@@ -1,13 +1,15 @@
 # Field Day, a plugin for Movable Type
 
-* Author: Six Apart, ported to MT5 by Ubiquitic
-* Copyright: 2008-2010 Six Apart Ltd. 2012 Ubiquitic.
+* Author: MT5 port by Ubiquitic, original code from Six Apart
+* Copyright: 2012 Ubiquitic, 2008-2010 Six Apart Ltd.
 * License: GPL
-* Site: <http://www.movabletype.org/>
+* Site: <https://github.com/padawan/mt-plugin-field-day/>
 
-## Notice
+## Compatibility
 
-This version of Field Day has been modified by Ubiquitic to work on MT5. *It will NOT work on MT4*. Please report issues here to help improve this plugin.
+This is the MT5 port of FieldDay by Ubiquitic. *It will NOT work on MT4*. If you are looking for the MT4 version, check <https://github.com/movabletype/mt-plugin-field-day> instead.
+Please report issues here to help improve this plugin.
+
 
 ## Overview
 
@@ -53,7 +55,9 @@ Should look like this when installed:
                     [plugin static files here]
 
 
-## Support
+## Release notes
 
-This plugin is not an official Six Apart release, and as such support for this
-plugin is not available.
+Version: 1.5.2 (current)
+Changes:
+* Text and Text Area fields are now created without a default width or height, and displayed using the MT5 UI conventions. A custom width or height can be supplied, as previously. Bug fix: https://github.com/padawan/mt-plugin-field-day/issues/9
+* Some Entry and Page grouped fields tags were broken, they work again. Bug fix: https://github.com/padawan/mt-plugin-field-day/issues/10
