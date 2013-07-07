@@ -17,7 +17,7 @@ use strict;
 use Data::Dumper;
 
 use vars qw( $VERSION $SCHEMA_VERSION );
-$VERSION = '1.5.2';
+$VERSION = '1.5.3';
 $SCHEMA_VERSION = '1.0';
 
 use base qw( MT::Plugin );
@@ -148,7 +148,7 @@ sub init_object_types {
         $menus->{"extrafields"} = {
             'label' => 'Extra Fields',
             'order' => 760
-        };	
+        };
         $menus->{"extrafields:fd_$ot->{'object_type'}"} = {
             'label' => ucfirst($key) . ' Fields',
             'mode' => "fd_cfg_fields",

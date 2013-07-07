@@ -33,13 +33,6 @@ sub stashed_id {
     return $asset ? $asset->id : undef;
 }
 
-sub edit_template_source {
-    my $class = shift;
-    my ($cb, $app, $template) = @_;
-    $$template =~ s/<form method="post"/<form method="post" name="asset_form" id="asset_form"/;
-    $class->SUPER::edit_template_source(@_);
-}
-
 sub insert_before_html_head {
     return q{<mt:include name="include/header.tmpl">};
 }

@@ -7,6 +7,8 @@
 
 ## Compatibility
 
+Requirement: MT 5.2.x
+
 This is the MT5 port of FieldDay by Ubiquitic. *It will NOT work on MT4*. If you are looking for the MT4 version, check <https://github.com/movabletype/mt-plugin-field-day> instead.
 Please report issues here to help improve this plugin.
 
@@ -57,7 +59,7 @@ Should look like this when installed:
 
 ## Release notes
 
-Version: 1.5.2 (current)
+Version: 1.5.3 (current)
 Changes:
-* Text and Text Area fields are now created without a default width or height, and displayed using the MT5 UI conventions. A custom width or height can be supplied, as previously. Bug fix: https://github.com/padawan/mt-plugin-field-day/issues/9
-* Some Entry and Page grouped fields tags were broken, they work again. Bug fix: https://github.com/padawan/mt-plugin-field-day/issues/10
+* Fixed an issue with MT5.2 where Blog fields wouldn't get saved. Bug fix: https://github.com/padawan/mt-plugin-field-day/issues/15
+* Fixed a similar issue where Category fields wouldn't show up at all.

@@ -62,7 +62,7 @@ sub edit_template_source {
     my $class = shift;
     my ($cb, $app, $template) = @_;
     $class->SUPER::edit_template_source($cb, $app, $template);
-    $$template =~ s/<form name="cfg_form"/<form name="cfg_form" id="cfg_form"/;
+    $$template =~ s#</mtapp:form>#<input type="hidden" name="fieldday" value="1" /></mtapp:form>#g;
 }
 
 sub sort_by {

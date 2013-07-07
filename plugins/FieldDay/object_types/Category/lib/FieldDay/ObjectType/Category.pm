@@ -19,8 +19,7 @@ use Data::Dumper;
 use base qw( FieldDay::ObjectType );
 
 sub insert_before {
-    return qq{<fieldset>
-        <h3><__trans phrase="Inbound TrackBacks"></h3>};
+    return qq{<mtapp:settinggroup id="category-ping">};
 }
 
 sub object_form_id {
