@@ -57,8 +57,25 @@ sub hdlr_FieldGroup {
     return '' unless ($group_id || $group);
     if ($group) {
         my %groups_by_name = map { $_->name => $_ } values %{$fd_data->{'groups_by_id'}};
-        $group_id = $groups_by_name{$group}->id;
-        local $ctx->{'__stash'}{"$stash_key:group_id"} = $group_id;
+        if (defined $groups_by_name{$group}) {
+          $group_id = $groups_by_name{$group}->id;
+          local $ctx->{'__stash'}{"$stash_key:group_id"} = $group_id;
+        } else {
+            my $blog_id = $ctx->stash('blog_id');
+            my $tmpl = $ctx->{__stash}{template};
+            my $msg = 'Publish error in template "%s": '
+                        . 'Error publishing %s tag: Unknown group %s';
+            $msg
+                = sprintf( $msg, $tmpl->name, $ctx->this_tag, $group );
+            warn $msg;
+            MT->log({
+                ($blog_id ? ( blog_id => $blog_id ) : () ),
+                message => $msg,
+                category => "publish",
+                level => MT::Log::ERROR(),
+            });
+            return $ctx->error($msg);
+        }
     }
     my $group_need_ns = $fd_data->{'group_need_ns'}->{$group_id};
     my @indices = (0 .. ($group_need_ns || 1) - 1);
@@ -154,22 +171,7 @@ sub get_group_ids {
     if ($groups) {
         for my $group (split(/,/, $groups)) {
             my %groups_by_name = map { $_->name => $_ } values %{$fd_data->{'groups_by_id'}};
-            unless ( defined $groups_by_name{$group} ) {
-                my $blog_id = $ctx->stash('blog_id');
-                my $tmpl    = $ctx->{__stash}{template};
-                my $msg     = 'Publish error in template "%s": '
-                            . 'Error publishing %s tag: Unknown group %s';
-                $msg
-                    = sprintf( $msg, $tmpl->name, $ctx->this_tag, $group );
-                warn $msg;
-                MT->log({
-                    ($blog_id ? ( blog_id => $blog_id ) : () ),
-                    message => $msg,
-                    category => "publish",
-                    level => MT::Log::ERROR(),
-                });
-                next;
-            }
+            next unless defined $groups_by_name{$group};
             push(@group_ids, $groups_by_name{$group}->id);
         }
     }
