@@ -59,7 +59,6 @@ Should look like this when installed:
 
 ## Release notes
 
-Version: 1.5.3 (current)
-Changes:
-* Fixed an issue with MT5.2 where Blog fields wouldn't get saved. Bug fix: https://github.com/padawan/mt-plugin-field-day/issues/15
-* Fixed a similar issue where Category fields wouldn't show up at all.
+Version: 1.5.4 (current)
+Changes in this version:
+* Better exception handling when an undefined group in used in a IfFieldGroup tag (authors: @jayallen, @CNG, see pull request https://github.com/padawan/mt-plugin-field-day/pull/16)
